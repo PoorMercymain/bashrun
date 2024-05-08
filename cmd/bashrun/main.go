@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/PoorMercymain/bashrun/pkg/logger"
 	"github.com/caarlos0/env/v6"
 	"github.com/golang-migrate/migrate/v4"
+	"golang.org/x/sync/semaphore"
 )
 
 func main() {
@@ -48,13 +50,20 @@ func main() {
 
 	pg := repository.NewPostgres(pool)
 
+	var wg sync.WaitGroup
+	sem := semaphore.NewWeighted(cfg.MaxConcurrentCommands)
+	commandContext, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	r := repository.New(pg)
-	s := service.New(r)
+	s := service.New(commandContext, r, sem, &wg)
 	h := handler.New(s)
 
 	mux := http.NewServeMux()
 
 	mux.Handle("GET /ping", http.HandlerFunc(h.Ping))
+	mux.Handle("POST /command/create", http.HandlerFunc(h.CreateCommand))
+	mux.Handle("GET /commands", http.HandlerFunc(h.ListCommands))
 
 	server := &http.Server{
 		Addr:     fmt.Sprintf("%s:%d", cfg.ServiceHost, cfg.ServicePort),
@@ -82,6 +91,21 @@ func main() {
 		logger.Logger().Errorln("server forced to shutdown")
 	} else if err != nil {
 		logger.Logger().Errorln("error while shutting down server:", err.Error())
+	}
+
+	ctx, cancel = context.WithTimeout(commandContext, time.Second*5)
+	defer cancel()
+
+	wgChan := make(chan struct{})
+	go func() {
+		wg.Wait()
+		wgChan<-struct{}{}
+	}()
+
+	select {
+	case <-wgChan:
+	case <-ctx.Done():
+		logger.Logger().Errorln("some of the commands were interrupted")
 	}
 
 	ctx, cancel = context.WithTimeout(context.Background(), time.Second*5)

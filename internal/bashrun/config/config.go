@@ -12,6 +12,7 @@ type Config struct {
 	ServiceHost      string `env:"SERVICE_HOST"          envDefault:"0.0.0.0"`
 	MigrationsPath   string `env:"MIGRATIONS_PATH"       envDefault:"migrations"`
 	LogFilePath      string `env:"LOG_FILE_PATH"         envDefault:"logfile.log"`
+	MaxConcurrentCommands int64 `env:"MAX_CONCURRENT_COMMANDS" envDefault:"100"`
 }
 
 func (c *Config) DSN() string {
