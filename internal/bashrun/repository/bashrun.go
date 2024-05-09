@@ -2,11 +2,12 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	appErrors "github.com/PoorMercymain/bashrun/errors"
 	"github.com/PoorMercymain/bashrun/internal/bashrun/domain"
 	"github.com/jackc/pgx/v5"
-	appErrors "github.com/PoorMercymain/bashrun/errors"
 )
 
 var (
@@ -121,10 +122,33 @@ func (r *bashrunRepository) UpdatePID(ctx context.Context, id int, pid int) erro
 	return nil
 }
 
+func (r *bashrunRepository) UpdateExitStatus(ctx context.Context, id int, exitStatusCode int) error {
+	const logPrefix = "repository.UpdateExitStatus"
+
+	err := r.db.WithTransaction(ctx, func(tx pgx.Tx) error {
+		tag, err := tx.Exec(ctx, "UPDATE cmd SET exit_status = $1 WHERE command_id = $2", exitStatusCode, id)
+		if err != nil {
+			return err
+		}
+
+		if tag.RowsAffected() == 0 {
+			return appErrors.ErrRowsNotAffected
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("%s: %w", logPrefix, err)
+	}
+
+	return nil
+}
+
 func (r *bashrunRepository) ListCommands(ctx context.Context, limit int, offset int) ([]domain.CommandFromDB, error) {
 	const logPrefix = "repository.ListCommands"
 
-	rows, err := r.db.Query(ctx, "SELECT command_id, command, pid, output_text, processing_status FROM cmd LIMIT $1 OFFSET $2", limit, offset)
+	rows, err := r.db.Query(ctx, "SELECT command_id, command, pid, output_text, processing_status, exit_status FROM cmd LIMIT $1 OFFSET $2", limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", logPrefix, err)
 	}
@@ -134,7 +158,7 @@ func (r *bashrunRepository) ListCommands(ctx context.Context, limit int, offset 
 	for rows.Next() {
 		var command domain.CommandFromDB
 
-		err = rows.Scan(&command.ID, &command.Command, &command.PID, &command.Output, &command.Status)
+		err = rows.Scan(&command.ID, &command.Command, &command.PID, &command.Output, &command.Status, &command.ExitStatus)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", logPrefix, err)
 		}
@@ -147,4 +171,52 @@ func (r *bashrunRepository) ListCommands(ctx context.Context, limit int, offset 
 	}
 
 	return commands, nil
+}
+
+func (r *bashrunRepository) ReadStatus(ctx context.Context, id int) (string, error) {
+	const logPrefix = "repository.ReadStatus"
+
+	var status string
+	err := r.db.QueryRow(ctx, "SELECT processing_status FROM cmd WHERE command_id = $1", id).Scan(&status)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", appErrors.ErrNoRows
+		}
+
+		return "", fmt.Errorf("%s: %w", logPrefix, err)
+	}
+
+	return status, nil
+}
+
+func (r *bashrunRepository) ReadPID(ctx context.Context, id int) (int, error) {
+	const logPrefix = "repository.ReadPID"
+
+	var pid int
+	err := r.db.QueryRow(ctx, "SELECT pid FROM cmd WHERE command_id = $1", id).Scan(&pid)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, appErrors.ErrNoRows
+		}
+
+		return 0, fmt.Errorf("%s: %w", logPrefix, err)
+	}
+
+	return pid, nil
+}
+
+func (r *bashrunRepository) ReadCommand(ctx context.Context, id int) (domain.CommandFromDB, error) {
+	const logPrefix = "repository.ReadCommand"
+
+	var command domain.CommandFromDB
+	err := r.db.QueryRow(ctx, "SELECT command_id, command, pid, output_text, processing_status, exit_status FROM cmd WHERE command_id = $1", id).Scan(&command.ID, &command.Command, &command.PID, &command.Output, &command.Status, &command.ExitStatus)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.CommandFromDB{}, appErrors.ErrNoRows
+		}
+
+		return domain.CommandFromDB{}, fmt.Errorf("%s: %w", logPrefix, err)
+	}
+
+	return command, nil
 }

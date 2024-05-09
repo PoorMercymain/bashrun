@@ -62,8 +62,10 @@ func main() {
 	mux := http.NewServeMux()
 
 	mux.Handle("GET /ping", http.HandlerFunc(h.Ping))
-	mux.Handle("POST /command/create", http.HandlerFunc(h.CreateCommand))
+	mux.Handle("POST /commands", http.HandlerFunc(h.CreateCommand))
 	mux.Handle("GET /commands", http.HandlerFunc(h.ListCommands))
+	mux.Handle("GET /commands/stop/{command_id}", http.HandlerFunc(h.StopCommand))
+	mux.Handle("GET /commands/{command_id}", http.HandlerFunc(h.ReadCommand))
 
 	server := &http.Server{
 		Addr:     fmt.Sprintf("%s:%d", cfg.ServiceHost, cfg.ServicePort),

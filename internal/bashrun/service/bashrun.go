@@ -3,11 +3,14 @@ package service
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"sync"
 	"time"
 
+	appErrors "github.com/PoorMercymain/bashrun/errors"
 	"github.com/PoorMercymain/bashrun/internal/bashrun/domain"
 	"github.com/PoorMercymain/bashrun/pkg/logger"
 	"golang.org/x/sync/semaphore"
@@ -65,6 +68,15 @@ func (s *bashrunService) CreateCommand(ctx context.Context, command string) (int
 				return "failed to create pipe", err
 			}
 
+			status, err := s.repo.ReadStatus(s.commandContext, id)
+			if err != nil {
+				return "failed to check status", err
+			}
+
+			if status == "stopped" {
+				return "stopped", appErrors.ErrCommandStopped
+			}
+
 			err = cmd.Start()
 			if err != nil {
 				return "failed to start command", err
@@ -89,6 +101,31 @@ func (s *bashrunService) CreateCommand(ctx context.Context, command string) (int
 				if err != nil {
 					return "failed to update output in DB", err
 				}
+			}
+
+			var exitStatus int
+			err = cmd.Wait()
+			if err != nil {
+				var exitErr *exec.ExitError
+				if errors.As(err, &exitErr) {
+					exitStatus = exitErr.ExitCode()
+				} else {
+					return "failed to wait for a process to finish", err
+				}
+			}
+
+			err = s.repo.UpdateExitStatus(s.commandContext, id, exitStatus)
+			if err != nil {
+				return "failed to update exit status in DB", err
+			}
+
+			status, err = s.repo.ReadStatus(s.commandContext, id)
+			if err != nil {
+				return "failed to check status", err
+			}
+
+			if status == "stopped" {
+				return "stopped", appErrors.ErrCommandStopped
 			}
 
 			err = s.repo.UpdateStatus(s.commandContext, id, "done")
@@ -124,4 +161,59 @@ func (s *bashrunService) ListCommands(ctx context.Context, limit int, offset int
 	}
 
 	return commands, nil
+}
+
+func (s *bashrunService) StopCommand(ctx context.Context, id int) error {
+	const logPrefix = "service.StopCommand"
+
+	status, err := s.repo.ReadStatus(ctx, id)
+	if err != nil {
+		return fmt.Errorf("%s: %w", logPrefix, err)
+	}
+
+	if status == "created" {
+		err = s.repo.UpdateStatus(ctx, id, "stopped")
+		if err != nil {
+			return fmt.Errorf("%s: %w", logPrefix, err)
+		}
+
+		return nil
+	}
+
+	if status != "started" {
+		return appErrors.ErrCommandNotRunning
+	}
+
+	pid, err := s.repo.ReadPID(ctx, id)
+	if err != nil {
+		return fmt.Errorf("%s: %w", logPrefix, err)
+	}
+
+	proc, err := os.FindProcess(pid)
+	if err != nil {
+		return fmt.Errorf("%s: %w", logPrefix, err)
+	}
+
+	err = proc.Kill()
+	if err != nil {
+		return fmt.Errorf("%s: %w", logPrefix, err)
+	}
+
+	err = s.repo.UpdateStatus(ctx, id, "stopped")
+	if err != nil {
+		return fmt.Errorf("%s: %w", logPrefix, err)
+	}
+
+	return nil
+}
+
+func (s *bashrunService) ReadCommand(ctx context.Context, id int) (domain.CommandFromDB, error) {
+	const logPrefix = "service.ReadCommand"
+
+	command, err := s.repo.ReadCommand(ctx, id)
+	if err != nil {
+		return domain.CommandFromDB{}, fmt.Errorf("%s: %w", logPrefix, err)
+	}
+
+	return command, nil
 }
