@@ -179,3 +179,40 @@ func (h *bashrunHandlers) ReadCommand(w http.ResponseWriter, r *http.Request) {
 		logger.Logger().Error(logPrefix, ": ", err.Error())
 	}
 }
+
+func (h *bashrunHandlers) ReadOutput(w http.ResponseWriter, r *http.Request) {
+	const logPrefix = "handlers.ReadOutput"
+	defer r.Body.Close()
+
+	id, err := strconv.Atoi(r.PathValue("command_id"))
+	if r.PathValue("command_id") != "" && (err != nil || id < 1) {
+		errwriter.WriteHTTPError(w, appErrors.ErrWrongID, http.StatusBadRequest, logPrefix)
+		return
+	} else if r.PathValue("command_id") == "" {
+		errwriter.WriteHTTPError(w, appErrors.ErrEmptyID, http.StatusBadRequest, logPrefix)
+		return
+	}
+
+	output, err := h.srv.ReadOutput(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, appErrors.ErrNoRows) {
+			errwriter.WriteHTTPError(w, appErrors.ErrCommandNotFound, http.StatusNotFound, logPrefix)
+			return
+		}
+
+		errwriter.WriteHTTPError(w, err, http.StatusInternalServerError, logPrefix)
+		return
+	}
+
+	if len(output) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	w.Header().Add("Content-Type", "text/plain")
+	w.WriteHeader(http.StatusOK)
+
+	if _, err = w.Write([]byte(output)); err != nil {
+		logger.Logger().Error(logPrefix, ": ", err.Error())
+	}
+}

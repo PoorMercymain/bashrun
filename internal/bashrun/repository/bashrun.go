@@ -220,3 +220,19 @@ func (r *bashrunRepository) ReadCommand(ctx context.Context, id int) (domain.Com
 
 	return command, nil
 }
+
+func (r *bashrunRepository) ReadOutput(ctx context.Context, id int) (string, error) {
+	const logPrefix = "repository.ReadOutput"
+
+	var output string
+	err := r.db.QueryRow(ctx, "SELECT output_text FROM cmd WHERE command_id = $1", id).Scan(&output)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", appErrors.ErrNoRows
+		}
+
+		return "", fmt.Errorf("%s: %w", logPrefix, err)
+	}
+
+	return output, nil
+}

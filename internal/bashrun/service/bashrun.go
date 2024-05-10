@@ -217,3 +217,14 @@ func (s *bashrunService) ReadCommand(ctx context.Context, id int) (domain.Comman
 
 	return command, nil
 }
+
+func (s *bashrunService) ReadOutput(ctx context.Context, id int) (string, error) {
+	const logPrefix = "service.ReadOutput"
+
+	output, err := s.repo.ReadOutput(ctx, id)
+	if err != nil {
+		return "", fmt.Errorf("%s: %w", logPrefix, err)
+	}
+
+	return output, nil
+}

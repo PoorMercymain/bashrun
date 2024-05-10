@@ -8,6 +8,7 @@ type BashrunService interface {
 	ListCommands(ctx context.Context, limit int, offset int) ([]CommandFromDB, error)
 	StopCommand(ctx context.Context, id int) error
 	ReadCommand(ctx context.Context, id int) (CommandFromDB, error)
+	ReadOutput(ctx context.Context, id int) (string, error)
 }
 
 type BashrunRepository interface {
@@ -21,4 +22,5 @@ type BashrunRepository interface {
 	ReadStatus(ctx context.Context, id int) (string, error)
 	ReadPID(ctx context.Context, id int) (int, error)
 	ReadCommand(ctx context.Context, id int) (CommandFromDB, error)
+	ReadOutput(ctx context.Context, id int) (string, error)
 }

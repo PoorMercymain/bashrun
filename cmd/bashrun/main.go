@@ -66,6 +66,7 @@ func main() {
 	mux.Handle("GET /commands", http.HandlerFunc(h.ListCommands))
 	mux.Handle("GET /commands/stop/{command_id}", http.HandlerFunc(h.StopCommand))
 	mux.Handle("GET /commands/{command_id}", http.HandlerFunc(h.ReadCommand))
+	mux.Handle("GET /commands/output/{command_id}", http.HandlerFunc(h.ReadOutput))
 
 	server := &http.Server{
 		Addr:     fmt.Sprintf("%s:%d", cfg.ServiceHost, cfg.ServicePort),
