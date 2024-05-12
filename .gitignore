@@ -29,3 +29,6 @@ bashrun-postgres/
 
 # Env file
 .env
+
+# JSON doc
+doc.json

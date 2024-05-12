@@ -498,7 +498,7 @@ func Test_bashrunHandlers_StopCommand(t *testing.T) {
 			route:          "/commands/stop/5",
 			body:           "",
 			headers:        [][2]string{},
-			expectedStatus: http.StatusNoContent,
+			expectedStatus: http.StatusAccepted,
 			requireParsing: false,
 			parsedBody:     nil,
 		},

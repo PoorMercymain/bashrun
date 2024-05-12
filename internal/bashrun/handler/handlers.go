@@ -124,11 +124,8 @@ func (h *bashrunHandlers) StopCommand(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	id, err := strconv.Atoi(r.PathValue("command_id"))
-	if r.PathValue("command_id") != "" && (err != nil || id < 1) {
+	if err != nil || id < 1 {
 		errwriter.WriteHTTPError(w, appErrors.ErrWrongID, http.StatusBadRequest, logPrefix)
-		return
-	} else if r.PathValue("command_id") == "" {
-		errwriter.WriteHTTPError(w, appErrors.ErrEmptyID, http.StatusBadRequest, logPrefix)
 		return
 	}
 
@@ -148,7 +145,7 @@ func (h *bashrunHandlers) StopCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func (h *bashrunHandlers) ReadCommand(w http.ResponseWriter, r *http.Request) {
@@ -156,11 +153,8 @@ func (h *bashrunHandlers) ReadCommand(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	id, err := strconv.Atoi(r.PathValue("command_id"))
-	if r.PathValue("command_id") != "" && (err != nil || id < 1) {
+	if err != nil || id < 1 {
 		errwriter.WriteHTTPError(w, appErrors.ErrWrongID, http.StatusBadRequest, logPrefix)
-		return
-	} else if r.PathValue("command_id") == "" {
-		errwriter.WriteHTTPError(w, appErrors.ErrEmptyID, http.StatusBadRequest, logPrefix)
 		return
 	}
 
@@ -188,11 +182,8 @@ func (h *bashrunHandlers) ReadOutput(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	id, err := strconv.Atoi(r.PathValue("command_id"))
-	if r.PathValue("command_id") != "" && (err != nil || id < 1) {
+	if err != nil || id < 1 {
 		errwriter.WriteHTTPError(w, appErrors.ErrWrongID, http.StatusBadRequest, logPrefix)
-		return
-	} else if r.PathValue("command_id") == "" {
-		errwriter.WriteHTTPError(w, appErrors.ErrEmptyID, http.StatusBadRequest, logPrefix)
 		return
 	}
 

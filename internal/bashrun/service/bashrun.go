@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"sync"
 	"time"
 
 	"golang.org/x/sync/semaphore"
+	"golang.org/x/sync/singleflight"
 
 	appErrors "github.com/PoorMercymain/bashrun/errors"
 	"github.com/PoorMercymain/bashrun/internal/bashrun/domain"
@@ -26,10 +28,11 @@ type bashrunService struct {
 	sem            *semaphore.Weighted
 	wg             *sync.WaitGroup
 	commandContext context.Context
+	sf             *singleflight.Group
 }
 
 func New(commandContext context.Context, repo domain.BashrunRepository, sem *semaphore.Weighted, wg *sync.WaitGroup) *bashrunService {
-	return &bashrunService{repo: repo, sem: sem, wg: wg, commandContext: commandContext}
+	return &bashrunService{repo: repo, sem: sem, wg: wg, commandContext: commandContext, sf: &singleflight.Group{}}
 }
 
 func (s *bashrunService) Ping(ctx context.Context) error {
@@ -194,20 +197,33 @@ func (s *bashrunService) StopCommand(ctx context.Context, id int) error {
 		return fmt.Errorf("%s: %w", logPrefix, err)
 	}
 
-	proc, err := os.FindProcess(pid)
-	if err != nil {
-		return fmt.Errorf("%s: %w", logPrefix, err)
-	}
+	s.wg.Add(1)
+	go func() {
+		defer s.wg.Done()
 
-	err = proc.Kill()
-	if err != nil {
-		return fmt.Errorf("%s: %w", logPrefix, err)
-	}
+		_, err, _ = s.sf.Do(strconv.Itoa(id), func() (interface{}, error) {
+			proc, err := os.FindProcess(pid)
+			if err != nil {
+				return nil, err
+			}
 
-	err = s.repo.UpdateStatus(ctx, id, "stopped")
-	if err != nil {
-		return fmt.Errorf("%s: %w", logPrefix, err)
-	}
+			err = proc.Kill()
+			if err != nil {
+				return nil, err
+			}
+
+			err = s.repo.UpdateStatus(ctx, id, "stopped")
+			if err != nil {
+				return nil, err
+			}
+
+			return nil, nil
+		})
+
+		if err != nil {
+			logger.Logger().Error(logPrefix, ": ", err.Error())
+		}
+	}()
 
 	return nil
 }

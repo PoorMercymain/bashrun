@@ -8,14 +8,18 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
 
 	"github.com/caarlos0/env/v6"
 	"github.com/golang-migrate/migrate/v4"
+	httpSwagger "github.com/swaggo/http-swagger"
+	"github.com/swaggo/swag"
 	"golang.org/x/sync/semaphore"
 
+	"github.com/PoorMercymain/bashrun/docs"
 	"github.com/PoorMercymain/bashrun/internal/bashrun/config"
 	"github.com/PoorMercymain/bashrun/internal/bashrun/handler"
 	"github.com/PoorMercymain/bashrun/internal/bashrun/repository"
@@ -28,6 +32,21 @@ func main() {
 	if err := env.Parse(&cfg); err != nil {
 		logger.Logger().Fatalln("Failed to parse env: %v", err)
 	}
+
+	var SwaggerInfo = &swag.Spec{
+		Version:          "1.1",
+		Host:             "localhost:" + strconv.Itoa(cfg.ServicePort),
+		BasePath:         "/",
+		Schemes:          []string{"http"},
+		Title:            "Сервис bash-команд",
+		Description:      "API для управления bash-скриптами",
+		InfoInstanceName: "swagger",
+		SwaggerTemplate:  docs.DocTemplate,
+		LeftDelim:        "{{",
+		RightDelim:       "}}",
+	}
+
+	swag.Register(SwaggerInfo.InstanceName(), SwaggerInfo)
 
 	logger.SetLogFile("logs/" + cfg.LogFilePath)
 	m, err := migrate.New("file://"+cfg.MigrationsPath, cfg.DSN())
@@ -68,6 +87,7 @@ func main() {
 	mux.Handle("GET /commands/stop/{command_id}", http.HandlerFunc(h.StopCommand))
 	mux.Handle("GET /commands/{command_id}", http.HandlerFunc(h.ReadCommand))
 	mux.Handle("GET /commands/output/{command_id}", http.HandlerFunc(h.ReadOutput))
+	mux.Handle("/swagger/*", httpSwagger.WrapHandler)
 
 	server := &http.Server{
 		Addr:     fmt.Sprintf("%s:%d", cfg.ServiceHost, cfg.ServicePort),
