@@ -11,6 +11,7 @@ type BashrunService interface {
 	ReadOutput(ctx context.Context, id int) (string, error)
 }
 
+//go:generate mockgen -destination=mocks/repo_mock.gen.go -package=mocks . BashrunRepository
 type BashrunRepository interface {
 	Ping(ctx context.Context) error
 	CreateCommand(ctx context.Context, command string) (int, error)

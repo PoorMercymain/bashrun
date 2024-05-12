@@ -28,7 +28,10 @@ func (h *bashrunHandlers) Ping(w http.ResponseWriter, r *http.Request) {
 	err := h.srv.Ping(r.Context())
 	if err != nil {
 		errwriter.WriteHTTPError(w, err, http.StatusInternalServerError, logPrefix)
+		return
 	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *bashrunHandlers) CreateCommand(w http.ResponseWriter, r *http.Request) {

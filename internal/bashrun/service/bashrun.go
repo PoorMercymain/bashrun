@@ -45,6 +45,7 @@ func (s *bashrunService) Ping(ctx context.Context) error {
 func (s *bashrunService) CreateCommand(ctx context.Context, command string) (int, error) {
 	const logPrefix = "service.CreateCommand"
 
+	logger.Logger().Infoln("CreateCommand called")
 	id, err := s.repo.CreateCommand(ctx, command)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", logPrefix, err)
@@ -68,6 +69,7 @@ func (s *bashrunService) CreateCommand(ctx context.Context, command string) (int
 				return "failed to create pipe", err
 			}
 
+			logger.Logger().Infoln("ReadStatus called")
 			status, err := s.repo.ReadStatus(s.commandContext, id)
 			if err != nil {
 				return "failed to check status", err
@@ -82,11 +84,13 @@ func (s *bashrunService) CreateCommand(ctx context.Context, command string) (int
 				return "failed to start command", err
 			}
 
+			logger.Logger().Infoln("UpdatePID called")
 			err = s.repo.UpdatePID(s.commandContext, id, cmd.Process.Pid)
 			if err != nil {
 				return "failed to set PID in DB", err
 			}
 
+			logger.Logger().Infoln("UpdateStatus called")
 			err = s.repo.UpdateStatus(s.commandContext, id, "started")
 			if err != nil {
 				return "failed to update status in DB", err
@@ -97,6 +101,7 @@ func (s *bashrunService) CreateCommand(ctx context.Context, command string) (int
 			var outputPart string
 			for scanner.Scan() {
 				outputPart = scanner.Text()
+				logger.Logger().Infoln("UpdateOutput called")
 				err = s.repo.UpdateOutput(s.commandContext, id, outputPart + "\n")
 				if err != nil {
 					return "failed to update output in DB", err
@@ -114,26 +119,24 @@ func (s *bashrunService) CreateCommand(ctx context.Context, command string) (int
 				}
 			}
 
+			logger.Logger().Infoln("UpdateExitStatus called")
 			err = s.repo.UpdateExitStatus(s.commandContext, id, exitStatus)
 			if err != nil {
 				return "failed to update exit status in DB", err
 			}
 
+			logger.Logger().Infoln("ReadStatus called")
 			status, err = s.repo.ReadStatus(s.commandContext, id)
 			if err != nil {
 				return "failed to check status", err
 			}
 
+			logger.Logger().Infoln(status)
 			if status == "stopped" {
 				return "stopped", appErrors.ErrCommandStopped
 			}
 
-			err = s.repo.UpdateStatus(s.commandContext, id, "done")
-			if err != nil {
-				return "failed to update status in DB", err
-			}
-
-			return "", nil
+			return "done", errors.New("")
 		}()
 
 		if err != nil {
@@ -141,6 +144,7 @@ func (s *bashrunService) CreateCommand(ctx context.Context, command string) (int
 			c, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
+			logger.Logger().Infoln("UpdateStatus called")
 			err = s.repo.UpdateStatus(c, id, status)
 			if err != nil {
 				logger.Logger().Error(logPrefix, ": ", err.Error())

@@ -148,7 +148,7 @@ func (r *bashrunRepository) UpdateExitStatus(ctx context.Context, id int, exitSt
 func (r *bashrunRepository) ListCommands(ctx context.Context, limit int, offset int) ([]domain.CommandFromDB, error) {
 	const logPrefix = "repository.ListCommands"
 
-	rows, err := r.db.Query(ctx, "SELECT command_id, command, pid, output_text, processing_status, exit_status FROM cmd LIMIT $1 OFFSET $2", limit, offset)
+	rows, err := r.db.Query(ctx, "SELECT command_id, command, pid, output_text, processing_status, exit_status FROM cmd ORDER BY command_id ASC LIMIT $1 OFFSET $2", limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", logPrefix, err)
 	}
