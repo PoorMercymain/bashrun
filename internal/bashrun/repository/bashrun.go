@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
+
 	appErrors "github.com/PoorMercymain/bashrun/errors"
 	"github.com/PoorMercymain/bashrun/internal/bashrun/domain"
-	"github.com/jackc/pgx/v5"
 )
 
 var (

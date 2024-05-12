@@ -10,10 +10,11 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/sync/semaphore"
+
 	appErrors "github.com/PoorMercymain/bashrun/errors"
 	"github.com/PoorMercymain/bashrun/internal/bashrun/domain"
 	"github.com/PoorMercymain/bashrun/pkg/logger"
-	"golang.org/x/sync/semaphore"
 )
 
 var (
@@ -21,9 +22,9 @@ var (
 )
 
 type bashrunService struct {
-	repo domain.BashrunRepository
-	sem *semaphore.Weighted
-	wg *sync.WaitGroup
+	repo           domain.BashrunRepository
+	sem            *semaphore.Weighted
+	wg             *sync.WaitGroup
 	commandContext context.Context
 }
 
@@ -102,7 +103,7 @@ func (s *bashrunService) CreateCommand(ctx context.Context, command string) (int
 			for scanner.Scan() {
 				outputPart = scanner.Text()
 				logger.Logger().Infoln("UpdateOutput called")
-				err = s.repo.UpdateOutput(s.commandContext, id, outputPart + "\n")
+				err = s.repo.UpdateOutput(s.commandContext, id, outputPart+"\n")
 				if err != nil {
 					return "failed to update output in DB", err
 				}

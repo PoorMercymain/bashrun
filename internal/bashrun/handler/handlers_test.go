@@ -12,23 +12,25 @@ import (
 	"testing"
 	"time"
 
-	"github.com/PoorMercymain/bashrun/internal/bashrun/domain"
-	"github.com/PoorMercymain/bashrun/internal/bashrun/domain/mocks"
-	"github.com/PoorMercymain/bashrun/internal/bashrun/service"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/semaphore"
+
+	appErrors "github.com/PoorMercymain/bashrun/errors"
+	"github.com/PoorMercymain/bashrun/internal/bashrun/domain"
+	"github.com/PoorMercymain/bashrun/internal/bashrun/domain/mocks"
+	"github.com/PoorMercymain/bashrun/internal/bashrun/service"
 )
 
 type testTableElem struct {
-	caseName string
-	httpMethod string
-	route string
-	body string
-	headers [][2]string
+	caseName       string
+	httpMethod     string
+	route          string
+	body           string
+	headers        [][2]string
 	expectedStatus int
 	requireParsing bool
-	parsedBody interface{}
+	parsedBody     interface{}
 }
 
 func testRouter(t *testing.T) *http.ServeMux {
@@ -82,6 +84,57 @@ func testRouter(t *testing.T) *http.ServeMux {
 	ar.EXPECT().UpdateExitStatus(gomock.Any(), 1, gomock.Any()).Return(errors.New("")).MaxTimes(1)
 	ar.EXPECT().UpdateStatus(gomock.Any(), 1, gomock.Any()).Return(nil).MaxTimes(1)
 
+	//8
+	ar.EXPECT().ListCommands(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("")).MaxTimes(1)
+
+	//9
+	ar.EXPECT().ListCommands(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, appErrors.ErrNoRows).MaxTimes(1)
+
+	var exitStatus int
+	//10
+	ar.EXPECT().ListCommands(gomock.Any(), gomock.Any(), gomock.Any()).Return([]domain.CommandFromDB{{ID: 1, Command: "ls", PID: 5, Output: "", Status: "done", ExitStatus: &exitStatus}}, nil).AnyTimes()
+
+	//11
+	ar.EXPECT().ReadStatus(gomock.Any(), 5).Return("", errors.New("")).MaxTimes(1)
+
+	//12
+	ar.EXPECT().ReadStatus(gomock.Any(), 5).Return("", appErrors.ErrNoRows).MaxTimes(1)
+
+	//13
+	ar.EXPECT().ReadStatus(gomock.Any(), 5).Return("created", nil).MaxTimes(2)
+	ar.EXPECT().UpdateStatus(gomock.Any(), 5, gomock.Any()).Return(errors.New("")).MaxTimes(1)
+
+	//14
+	ar.EXPECT().UpdateStatus(gomock.Any(), 5, gomock.Any()).Return(nil).MaxTimes(1)
+
+	//15
+	ar.EXPECT().ReadStatus(gomock.Any(), 5).Return("", nil).MaxTimes(1)
+
+	//16
+	ar.EXPECT().ReadStatus(gomock.Any(), 5).Return("started", nil).MaxTimes(1)
+	ar.EXPECT().ReadPID(gomock.Any(), 5).Return(5, errors.New("")).MaxTimes(1)
+
+	//17
+	ar.EXPECT().ReadCommand(gomock.Any(), gomock.Any()).Return(domain.CommandFromDB{}, errors.New("")).MaxTimes(1)
+
+	//18
+	ar.EXPECT().ReadCommand(gomock.Any(), gomock.Any()).Return(domain.CommandFromDB{}, appErrors.ErrNoRows).MaxTimes(1)
+
+	//19
+	ar.EXPECT().ReadCommand(gomock.Any(), gomock.Any()).Return(domain.CommandFromDB{ID: 1, Command: "ls", PID: 5, Output: "", Status: "done", ExitStatus: &exitStatus}, nil).AnyTimes()
+
+	//20
+	ar.EXPECT().ReadOutput(gomock.Any(), gomock.Any()).Return("", errors.New("")).MaxTimes(1)
+
+	//21
+	ar.EXPECT().ReadOutput(gomock.Any(), gomock.Any()).Return("", appErrors.ErrNoRows).MaxTimes(1)
+
+	//22
+	ar.EXPECT().ReadOutput(gomock.Any(), gomock.Any()).Return("", nil).MaxTimes(1)
+
+	//23
+	ar.EXPECT().ReadOutput(gomock.Any(), gomock.Any()).Return("a", nil).AnyTimes()
+
 	mux.Handle("GET /ping", http.HandlerFunc(ah.Ping))
 	mux.Handle("POST /commands", http.HandlerFunc(ah.CreateCommand))
 	mux.Handle("GET /commands", http.HandlerFunc(ah.ListCommands))
@@ -127,34 +180,34 @@ func Test_bashrunHandlers_Ping(t *testing.T) {
 
 	tests := []testTableElem{
 		{
-			caseName: "server error",
-			httpMethod: http.MethodGet,
-			route: "/ping",
-			body: "",
-			headers: [][2]string{},
+			caseName:       "server error",
+			httpMethod:     http.MethodGet,
+			route:          "/ping",
+			body:           "",
+			headers:        [][2]string{},
 			expectedStatus: http.StatusInternalServerError,
 			requireParsing: false,
-			parsedBody: nil,
+			parsedBody:     nil,
 		},
 		{
-			caseName: "ok",
-			httpMethod: http.MethodGet,
-			route: "/ping",
-			body: "",
-			headers: [][2]string{},
+			caseName:       "ok",
+			httpMethod:     http.MethodGet,
+			route:          "/ping",
+			body:           "",
+			headers:        [][2]string{},
 			expectedStatus: http.StatusNoContent,
 			requireParsing: false,
-			parsedBody: nil,
+			parsedBody:     nil,
 		},
 		{
-			caseName: "wrong http method",
-			httpMethod: http.MethodPost,
-			route: "/ping",
-			body: "",
-			headers: [][2]string{},
+			caseName:       "wrong http method",
+			httpMethod:     http.MethodPost,
+			route:          "/ping",
+			body:           "",
+			headers:        [][2]string{},
 			expectedStatus: http.StatusMethodNotAllowed,
 			requireParsing: false,
-			parsedBody: nil,
+			parsedBody:     nil,
 		},
 	}
 
@@ -177,124 +230,124 @@ func Test_bashrunHandlers_CreateCommand(t *testing.T) {
 	var id domain.ID
 	tests := []testTableElem{
 		{
-			caseName: "unknown key in JSON",
-			httpMethod: http.MethodPost,
-			route: "/commands",
-			body: "{\"cmd\": \"abc\"}",
-			headers: [][2]string{{"Content-Type", "application/json"}},
+			caseName:       "unknown key in JSON",
+			httpMethod:     http.MethodPost,
+			route:          "/commands",
+			body:           "{\"cmd\": \"abc\"}",
+			headers:        [][2]string{{"Content-Type", "application/json"}},
 			expectedStatus: http.StatusBadRequest,
 			requireParsing: false,
-			parsedBody: nil,
+			parsedBody:     nil,
 		},
 		{
-			caseName: "duplicate key in JSON",
-			httpMethod: http.MethodPost,
-			route: "/commands",
-			body: "{\"command\": \"abc\", \"command\": \"abc2\"}",
-			headers: [][2]string{{"Content-Type", "application/json"}},
+			caseName:       "duplicate key in JSON",
+			httpMethod:     http.MethodPost,
+			route:          "/commands",
+			body:           "{\"command\": \"abc\", \"command\": \"abc2\"}",
+			headers:        [][2]string{{"Content-Type", "application/json"}},
 			expectedStatus: http.StatusBadRequest,
 			requireParsing: false,
-			parsedBody: nil,
+			parsedBody:     nil,
 		},
 		{
-			caseName: "wrong JSON",
-			httpMethod: http.MethodPost,
-			route: "/commands",
-			body: "{\"command\": \"abc\",",
-			headers: [][2]string{{"Content-Type", "application/json"}},
+			caseName:       "wrong JSON",
+			httpMethod:     http.MethodPost,
+			route:          "/commands",
+			body:           "{\"command\": \"abc\",",
+			headers:        [][2]string{{"Content-Type", "application/json"}},
 			expectedStatus: http.StatusBadRequest,
 			requireParsing: false,
-			parsedBody: nil,
+			parsedBody:     nil,
 		},
 		{
-			caseName: "duplicate key in JSON",
-			httpMethod: http.MethodPost,
-			route: "/commands",
-			body: "{\"command\": \"abc\", \"command\": \"abc2\"}",
-			headers: [][2]string{{"Content-Type", "application/json"}},
+			caseName:       "duplicate key in JSON",
+			httpMethod:     http.MethodPost,
+			route:          "/commands",
+			body:           "{\"command\": \"abc\", \"command\": \"abc2\"}",
+			headers:        [][2]string{{"Content-Type", "application/json"}},
 			expectedStatus: http.StatusBadRequest,
 			requireParsing: false,
-			parsedBody: nil,
+			parsedBody:     nil,
 		},
 		{
-			caseName: "empty command",
-			httpMethod: http.MethodPost,
-			route: "/commands",
-			body: "{\"command\": \"\"}",
-			headers: [][2]string{{"Content-Type", "application/json"}},
+			caseName:       "empty command",
+			httpMethod:     http.MethodPost,
+			route:          "/commands",
+			body:           "{\"command\": \"\"}",
+			headers:        [][2]string{{"Content-Type", "application/json"}},
 			expectedStatus: http.StatusBadRequest,
 			requireParsing: false,
-			parsedBody: nil,
+			parsedBody:     nil,
 		},
-		{//1
-			caseName: "server error",
-			httpMethod: http.MethodPost,
-			route: "/commands",
-			body: "{\"command\": \"abc\"}",
-			headers: [][2]string{{"Content-Type", "application/json"}},
+		{ //1
+			caseName:       "server error",
+			httpMethod:     http.MethodPost,
+			route:          "/commands",
+			body:           "{\"command\": \"abc\"}",
+			headers:        [][2]string{{"Content-Type", "application/json"}},
 			expectedStatus: http.StatusInternalServerError,
 			requireParsing: false,
-			parsedBody: nil,
+			parsedBody:     nil,
 		},
-		{//2
-			caseName: "ok (but command is stopped before running)",
-			httpMethod: http.MethodPost,
-			route: "/commands",
-			body: "{\"command\": \"exit 0\"}",
-			headers: [][2]string{{"Content-Type", "application/json"}},
+		{ //2
+			caseName:       "ok (but command is stopped before running)",
+			httpMethod:     http.MethodPost,
+			route:          "/commands",
+			body:           "{\"command\": \"exit 0\"}",
+			headers:        [][2]string{{"Content-Type", "application/json"}},
 			expectedStatus: http.StatusAccepted,
 			requireParsing: true,
-			parsedBody: &id,
+			parsedBody:     &id,
 		},
-		{//3
-			caseName: "ok (but status check failed before running)",
-			httpMethod: http.MethodPost,
-			route: "/commands",
-			body: "{\"command\": \"exit 0\"}",
-			headers: [][2]string{{"Content-Type", "application/json"}},
+		{ //3
+			caseName:       "ok (but status check failed before running)",
+			httpMethod:     http.MethodPost,
+			route:          "/commands",
+			body:           "{\"command\": \"exit 0\"}",
+			headers:        [][2]string{{"Content-Type", "application/json"}},
 			expectedStatus: http.StatusAccepted,
 			requireParsing: true,
-			parsedBody: &id,
+			parsedBody:     &id,
 		},
-		{//4
-			caseName: "ok (but update PID failed)",
-			httpMethod: http.MethodPost,
-			route: "/commands",
-			body: "{\"command\": \"exit 0\"}",
-			headers: [][2]string{{"Content-Type", "application/json"}},
+		{ //4
+			caseName:       "ok (but update PID failed)",
+			httpMethod:     http.MethodPost,
+			route:          "/commands",
+			body:           "{\"command\": \"exit 0\"}",
+			headers:        [][2]string{{"Content-Type", "application/json"}},
 			expectedStatus: http.StatusAccepted,
 			requireParsing: true,
-			parsedBody: &id,
+			parsedBody:     &id,
 		},
-		{//5
-			caseName: "ok (but update status failed)",
-			httpMethod: http.MethodPost,
-			route: "/commands",
-			body: "{\"command\": \"exit 0\"}",
-			headers: [][2]string{{"Content-Type", "application/json"}},
+		{ //5
+			caseName:       "ok (but update status failed)",
+			httpMethod:     http.MethodPost,
+			route:          "/commands",
+			body:           "{\"command\": \"exit 0\"}",
+			headers:        [][2]string{{"Content-Type", "application/json"}},
 			expectedStatus: http.StatusAccepted,
 			requireParsing: true,
-			parsedBody: &id,
+			parsedBody:     &id,
 		},
-		{//6
-			caseName: "ok (but update output failed)",
-			httpMethod: http.MethodPost,
-			route: "/commands",
-			body: "{\"command\": \"ls\"}",
-			headers: [][2]string{{"Content-Type", "application/json"}},
+		{ //6
+			caseName:       "ok (but update output failed)",
+			httpMethod:     http.MethodPost,
+			route:          "/commands",
+			body:           "{\"command\": \"ls\"}",
+			headers:        [][2]string{{"Content-Type", "application/json"}},
 			expectedStatus: http.StatusAccepted,
 			requireParsing: true,
-			parsedBody: &id,
+			parsedBody:     &id,
 		},
-		{//7
-			caseName: "ok (but update exit status failed)",
-			httpMethod: http.MethodPost,
-			route: "/commands",
-			body: "{\"command\": \"ls\"}",
-			headers: [][2]string{{"Content-Type", "application/json"}},
+		{ //7
+			caseName:       "ok (but update exit status failed)",
+			httpMethod:     http.MethodPost,
+			route:          "/commands",
+			body:           "{\"command\": \"ls\"}",
+			headers:        [][2]string{{"Content-Type", "application/json"}},
 			expectedStatus: http.StatusAccepted,
 			requireParsing: true,
-			parsedBody: &id,
+			parsedBody:     &id,
 		},
 	}
 
@@ -314,6 +367,302 @@ func Test_bashrunHandlers_CreateCommand(t *testing.T) {
 			require.Equal(t, 1, id.ID)
 		}
 
-		<-time.After(time.Millisecond*100)
+		<-time.After(time.Millisecond * 100)
+	}
+}
+
+func Test_bashrunHandlers_ListCommands(t *testing.T) {
+	ts := httptest.NewServer(testRouter(t))
+	defer ts.Close()
+
+	client := http.Client{}
+
+	var commands []domain.CommandFromDB
+	tests := []testTableElem{
+		{
+			caseName:       "non-numeric limit",
+			httpMethod:     http.MethodGet,
+			route:          "/commands?limit=a",
+			body:           "",
+			headers:        [][2]string{},
+			expectedStatus: http.StatusBadRequest,
+			requireParsing: false,
+			parsedBody:     nil,
+		},
+		{
+			caseName:       "non-numeric offset",
+			httpMethod:     http.MethodGet,
+			route:          "/commands?offset=a",
+			body:           "",
+			headers:        [][2]string{},
+			expectedStatus: http.StatusBadRequest,
+			requireParsing: false,
+			parsedBody:     nil,
+		},
+		{ //8
+			caseName:       "server error",
+			httpMethod:     http.MethodGet,
+			route:          "/commands",
+			body:           "",
+			headers:        [][2]string{},
+			expectedStatus: http.StatusInternalServerError,
+			requireParsing: false,
+			parsedBody:     nil,
+		},
+		{ //9
+			caseName:       "rows not found",
+			httpMethod:     http.MethodGet,
+			route:          "/commands",
+			body:           "",
+			headers:        [][2]string{},
+			expectedStatus: http.StatusNoContent,
+			requireParsing: false,
+			parsedBody:     nil,
+		},
+		{ //10
+			caseName:       "ok",
+			httpMethod:     http.MethodGet,
+			route:          "/commands",
+			body:           "",
+			headers:        [][2]string{},
+			expectedStatus: http.StatusOK,
+			requireParsing: true,
+			parsedBody:     &commands,
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Log(testCase.caseName)
+
+		req, err := buildRequest(testCase.httpMethod, testCase.route, testCase.body, testCase.headers, ts.URL)
+		require.NoError(t, err)
+
+		sendReq(t, &client, req, testCase.expectedStatus, testCase.parsedBody, testCase.requireParsing)
+
+		if testCase.caseName == "ok" {
+			require.Equal(t, 1, len(commands))
+		}
+	}
+}
+
+func Test_bashrunHandlers_StopCommand(t *testing.T) {
+	ts := httptest.NewServer(testRouter(t))
+	defer ts.Close()
+
+	client := http.Client{}
+
+	tests := []testTableElem{
+		{
+			caseName:       "non-numeric id",
+			httpMethod:     http.MethodGet,
+			route:          "/commands/stop/a",
+			body:           "",
+			headers:        [][2]string{},
+			expectedStatus: http.StatusBadRequest,
+			requireParsing: false,
+			parsedBody:     nil,
+		},
+		{ //11
+			caseName:       "server error",
+			httpMethod:     http.MethodGet,
+			route:          "/commands/stop/5",
+			body:           "",
+			headers:        [][2]string{},
+			expectedStatus: http.StatusInternalServerError,
+			requireParsing: false,
+			parsedBody:     nil,
+		},
+		{ //12
+			caseName:       "rows not found",
+			httpMethod:     http.MethodGet,
+			route:          "/commands/stop/5",
+			body:           "",
+			headers:        [][2]string{},
+			expectedStatus: http.StatusNotFound,
+			requireParsing: false,
+			parsedBody:     nil,
+		},
+		{ //13
+			caseName:       "failed to update status",
+			httpMethod:     http.MethodGet,
+			route:          "/commands/stop/5",
+			body:           "",
+			headers:        [][2]string{},
+			expectedStatus: http.StatusInternalServerError,
+			requireParsing: false,
+			parsedBody:     nil,
+		},
+		{ //14
+			caseName:       "command status is \"created\"",
+			httpMethod:     http.MethodGet,
+			route:          "/commands/stop/5",
+			body:           "",
+			headers:        [][2]string{},
+			expectedStatus: http.StatusNoContent,
+			requireParsing: false,
+			parsedBody:     nil,
+		},
+		{ //15
+			caseName:       "command not started",
+			httpMethod:     http.MethodGet,
+			route:          "/commands/stop/5",
+			body:           "",
+			headers:        [][2]string{},
+			expectedStatus: http.StatusBadRequest,
+			requireParsing: false,
+			parsedBody:     nil,
+		},
+		{ //16
+			caseName:       "read PID failed",
+			httpMethod:     http.MethodGet,
+			route:          "/commands/stop/5",
+			body:           "",
+			headers:        [][2]string{},
+			expectedStatus: http.StatusInternalServerError,
+			requireParsing: false,
+			parsedBody:     nil,
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Log(testCase.caseName)
+
+		req, err := buildRequest(testCase.httpMethod, testCase.route, testCase.body, testCase.headers, ts.URL)
+		require.NoError(t, err)
+
+		sendReq(t, &client, req, testCase.expectedStatus, testCase.parsedBody, testCase.requireParsing)
+	}
+}
+
+func Test_bashrunHandlers_ReadCommand(t *testing.T) {
+	ts := httptest.NewServer(testRouter(t))
+	defer ts.Close()
+
+	client := http.Client{}
+
+	var command domain.CommandFromDB
+	tests := []testTableElem{
+		{
+			caseName:       "non-numeric id",
+			httpMethod:     http.MethodGet,
+			route:          "/commands/a",
+			body:           "",
+			headers:        [][2]string{},
+			expectedStatus: http.StatusBadRequest,
+			requireParsing: false,
+			parsedBody:     nil,
+		},
+		{ //17
+			caseName:       "server error",
+			httpMethod:     http.MethodGet,
+			route:          "/commands/1",
+			body:           "",
+			headers:        [][2]string{},
+			expectedStatus: http.StatusInternalServerError,
+			requireParsing: false,
+			parsedBody:     nil,
+		},
+		{ //18
+			caseName:       "rows not found",
+			httpMethod:     http.MethodGet,
+			route:          "/commands/1",
+			body:           "",
+			headers:        [][2]string{},
+			expectedStatus: http.StatusNotFound,
+			requireParsing: false,
+			parsedBody:     nil,
+		},
+		{ //19
+			caseName:       "ok",
+			httpMethod:     http.MethodGet,
+			route:          "/commands/1",
+			body:           "",
+			headers:        [][2]string{},
+			expectedStatus: http.StatusOK,
+			requireParsing: true,
+			parsedBody:     &command,
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Log(testCase.caseName)
+
+		req, err := buildRequest(testCase.httpMethod, testCase.route, testCase.body, testCase.headers, ts.URL)
+		require.NoError(t, err)
+
+		sendReq(t, &client, req, testCase.expectedStatus, testCase.parsedBody, testCase.requireParsing)
+
+		if testCase.caseName == "ok" {
+			require.Equal(t, 1, command.ID)
+		}
+	}
+}
+
+func Test_bashrunHandlers_ReadOutput(t *testing.T) {
+	ts := httptest.NewServer(testRouter(t))
+	defer ts.Close()
+
+	client := http.Client{}
+
+	tests := []testTableElem{
+		{
+			caseName:       "non-numeric id",
+			httpMethod:     http.MethodGet,
+			route:          "/commands/output/a",
+			body:           "",
+			headers:        [][2]string{},
+			expectedStatus: http.StatusBadRequest,
+			requireParsing: false,
+			parsedBody:     nil,
+		},
+		{ //20
+			caseName:       "server error",
+			httpMethod:     http.MethodGet,
+			route:          "/commands/output/1",
+			body:           "",
+			headers:        [][2]string{},
+			expectedStatus: http.StatusInternalServerError,
+			requireParsing: false,
+			parsedBody:     nil,
+		},
+		{ //21
+			caseName:       "rows not found",
+			httpMethod:     http.MethodGet,
+			route:          "/commands/output/1",
+			body:           "",
+			headers:        [][2]string{},
+			expectedStatus: http.StatusNotFound,
+			requireParsing: false,
+			parsedBody:     nil,
+		},
+		{ //22
+			caseName:       "empty output",
+			httpMethod:     http.MethodGet,
+			route:          "/commands/output/1",
+			body:           "",
+			headers:        [][2]string{},
+			expectedStatus: http.StatusNoContent,
+			requireParsing: false,
+			parsedBody:     nil,
+		},
+		{ //23
+			caseName:       "ok",
+			httpMethod:     http.MethodGet,
+			route:          "/commands/output/1",
+			body:           "",
+			headers:        [][2]string{},
+			expectedStatus: http.StatusOK,
+			requireParsing: false,
+			parsedBody:     nil,
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Log(testCase.caseName)
+
+		req, err := buildRequest(testCase.httpMethod, testCase.route, testCase.body, testCase.headers, ts.URL)
+		require.NoError(t, err)
+
+		sendReq(t, &client, req, testCase.expectedStatus, testCase.parsedBody, testCase.requireParsing)
 	}
 }

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/PoorMercymain/bashrun/pkg/logger"
 	appErrors "github.com/PoorMercymain/bashrun/errors"
+	"github.com/PoorMercymain/bashrun/pkg/logger"
 )
 
 type JSONError struct {

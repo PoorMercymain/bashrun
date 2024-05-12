@@ -12,14 +12,15 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/caarlos0/env/v6"
+	"github.com/golang-migrate/migrate/v4"
+	"golang.org/x/sync/semaphore"
+
 	"github.com/PoorMercymain/bashrun/internal/bashrun/config"
 	"github.com/PoorMercymain/bashrun/internal/bashrun/handler"
 	"github.com/PoorMercymain/bashrun/internal/bashrun/repository"
 	"github.com/PoorMercymain/bashrun/internal/bashrun/service"
 	"github.com/PoorMercymain/bashrun/pkg/logger"
-	"github.com/caarlos0/env/v6"
-	"github.com/golang-migrate/migrate/v4"
-	"golang.org/x/sync/semaphore"
 )
 
 func main() {
@@ -102,7 +103,7 @@ func main() {
 	wgChan := make(chan struct{})
 	go func() {
 		wg.Wait()
-		wgChan<-struct{}{}
+		wgChan <- struct{}{}
 	}()
 
 	select {
@@ -115,9 +116,9 @@ func main() {
 	defer cancel()
 
 	poolCloseCh := make(chan struct{})
-	go func () {
+	go func() {
 		pool.Close()
-		poolCloseCh<-struct{}{}
+		poolCloseCh <- struct{}{}
 	}()
 
 	select {

@@ -8,8 +8,9 @@ import (
 	context "context"
 	reflect "reflect"
 
-	domain "github.com/PoorMercymain/bashrun/internal/bashrun/domain"
 	gomock "github.com/golang/mock/gomock"
+
+	domain "github.com/PoorMercymain/bashrun/internal/bashrun/domain"
 )
 
 // MockBashrunRepository is a mock of BashrunRepository interface.
