@@ -67,6 +67,6 @@ API приложения должно содержать следующий фу
 
 <p align="center"><img src="https://github.com/PoorMercymain/bashrun/assets/67076111/3a299a7a-65a7-4aec-b3a3-f1420239cc51"></p>
 
-`GET /commands/output/{command_id}` - получение вывода команды (вывод обновляется по мере выполнения скрипта)
+`GET /commands/output/{command_id}` - получение вывода команды (вывод обновляется в БД по мере выполнения скрипта)
 
 <p align="center"><img src="https://github.com/PoorMercymain/bashrun/assets/67076111/5ad169e4-8e8a-44c2-9e8b-56472391a85f"></p>
