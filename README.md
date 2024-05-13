@@ -12,16 +12,16 @@
 ![изображение](https://github.com/PoorMercymain/bashrun/assets/67076111/6b661df3-f3f7-46fb-bde0-b929fcabaaf0)
 
 # Postman коллекция
-Также в репозитории присутствует <a href="https://github.com/PoorMercymain/bashrun/blob/swagger/bashrun.postman_collection.json">postman коллекция</a> с примерами запросов
+Также в репозитории присутствует <a href="https://github.com/PoorMercymain/bashrun/blob/main/bashrun.postman_collection.json">postman коллекция</a> с примерами запросов
 
 <p align="center"><img src="https://github.com/PoorMercymain/bashrun/assets/67076111/26700dc7-b071-4c10-a60a-54ad883560ab"></p>
 
 # Миграции
-Миграции находятся в директории <a href="https://github.com/PoorMercymain/bashrun/tree/swagger/migrations">migrations</a>. В них производится создание таблицы и индекса
+Миграции находятся в директории <a href="https://github.com/PoorMercymain/bashrun/tree/main/migrations">migrations</a>. В них производится создание таблицы и индекса
 <p align="center"><img src="https://github.com/PoorMercymain/bashrun/assets/67076111/3dad7380-6228-4354-af99-68493c222f4f"></p>
 
 # Docker
-Для развертывания сервиса, есть <a href="https://github.com/PoorMercymain/bashrun/blob/swagger/Dockerfile">Dockerfile</a>, используемый в <a href="https://github.com/PoorMercymain/bashrun/blob/swagger/docker-compose.yml">docker-compose</a> (указан соответствующий контекст). Также, в docker-compose развертывается и БД
+Для развертывания сервиса, есть <a href="https://github.com/PoorMercymain/bashrun/blob/main/Dockerfile">Dockerfile</a>, используемый в <a href="https://github.com/PoorMercymain/bashrun/blob/main/docker-compose.yml">docker-compose</a> (указан соответствующий контекст). Также, в docker-compose развертывается и БД
 
 # Используемый дистрибутив Linux
 Использовал:
