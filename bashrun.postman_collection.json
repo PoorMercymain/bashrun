@@ -1,0 +1,552 @@
+{
+	"info": {
+		"_postman_id": "1cf164b9-89cc-4d1f-afa1-e1445d3d094d",
+		"name": "bashrun",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "29849684"
+	},
+	"item": [
+		{
+			"name": "ping",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/commands",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"commands"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "ping",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/ping",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"ping"
+							]
+						}
+					},
+					"status": "No Content",
+					"code": 204,
+					"_postman_previewlanguage": "plain",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Sun, 12 May 2024 23:55:04 GMT"
+						}
+					],
+					"cookie": [],
+					"body": null
+				}
+			]
+		},
+		{
+			"name": "create-command",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"command\": \"ls\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/commands",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"commands"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "create-command-ls",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"command\": \"ls\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8080/commands",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"commands"
+							]
+						}
+					},
+					"status": "Accepted",
+					"code": 202,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Date",
+							"value": "Sun, 12 May 2024 23:33:35 GMT"
+						},
+						{
+							"key": "Content-Length",
+							"value": "17"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"command_id\": 1\n}"
+				},
+				{
+					"name": "create-command-long",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"command\": \"sleep 20; exit 3\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8080/commands",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"commands"
+							]
+						}
+					},
+					"status": "Accepted",
+					"code": 202,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Date",
+							"value": "Sun, 12 May 2024 23:35:51 GMT"
+						},
+						{
+							"key": "Content-Length",
+							"value": "17"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"command_id\": 2\n}"
+				}
+			]
+		},
+		{
+			"name": "list-commands",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/commands",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"commands"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "list-commands",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/commands",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"commands"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Date",
+							"value": "Sun, 12 May 2024 23:50:20 GMT"
+						},
+						{
+							"key": "Content-Length",
+							"value": "1030"
+						}
+					],
+					"cookie": [],
+					"body": "[\n    {\n        \"command_id\": 1,\n        \"command\": \"ls\",\n        \"pid\": 15,\n        \"output\": \"logs\\nmain\\nmigrations\\n\",\n        \"status\": \"done\",\n        \"exitStatus\": 0\n    },\n    {\n        \"command_id\": 2,\n        \"command\": \"sleep 20; exit 3\",\n        \"pid\": 16,\n        \"output\": \"\",\n        \"status\": \"stopped\",\n        \"exitStatus\": -1\n    }\n]"
+				},
+				{
+					"name": "list-commands-limit-offset",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/commands?limit=1&offset=1",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"commands"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "1"
+								},
+								{
+									"key": "offset",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Date",
+							"value": "Sun, 12 May 2024 23:55:54 GMT"
+						},
+						{
+							"key": "Content-Length",
+							"value": "105"
+						}
+					],
+					"cookie": [],
+					"body": "[\n    {\n        \"command_id\": 2,\n        \"command\": \"sleep 20; exit 3\",\n        \"pid\": 16,\n        \"output\": \"\",\n        \"status\": \"stopped\",\n        \"exitStatus\": -1\n    }\n]"
+				}
+			]
+		},
+		{
+			"name": "stop-command",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/commands/stop/11",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"commands",
+						"stop",
+						"11"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "stop-command-running",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/commands/stop/2",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"commands",
+								"stop",
+								"2"
+							]
+						}
+					},
+					"status": "Accepted",
+					"code": 202,
+					"_postman_previewlanguage": "plain",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Sun, 12 May 2024 23:37:12 GMT"
+						},
+						{
+							"key": "Content-Length",
+							"value": "0"
+						}
+					],
+					"cookie": [],
+					"body": null
+				},
+				{
+					"name": "stop-command-finished",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/commands/stop/1",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"commands",
+								"stop",
+								"1"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Date",
+							"value": "Sun, 12 May 2024 23:40:36 GMT"
+						},
+						{
+							"key": "Content-Length",
+							"value": "47"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"error\": \"the command is not running already\"\n}"
+				}
+			]
+		},
+		{
+			"name": "read-command",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/commands/11",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"commands",
+						"11"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "read-command-stopped",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/commands/2",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"commands",
+								"2"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Date",
+							"value": "Sun, 12 May 2024 23:52:46 GMT"
+						},
+						{
+							"key": "Content-Length",
+							"value": "103"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"command_id\": 2,\n    \"command\": \"sleep 20; exit 3\",\n    \"pid\": 16,\n    \"output\": \"\",\n    \"status\": \"stopped\",\n    \"exitStatus\": -1\n}"
+				},
+				{
+					"name": "read-command",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/commands/1",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"commands",
+								"1"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Date",
+							"value": "Sun, 12 May 2024 23:53:26 GMT"
+						},
+						{
+							"key": "Content-Length",
+							"value": "108"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"command_id\": 1,\n    \"command\": \"ls\",\n    \"pid\": 15,\n    \"output\": \"logs\\nmain\\nmigrations\\n\",\n    \"status\": \"done\",\n    \"exitStatus\": 0\n}"
+				}
+			]
+		},
+		{
+			"name": "read-output",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/commands/output/100",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"commands",
+						"output",
+						"100"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "read-output-ls",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/commands/output/1",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"commands",
+								"output",
+								"1"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "plain",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "text/plain"
+						},
+						{
+							"key": "Date",
+							"value": "Sun, 12 May 2024 23:38:28 GMT"
+						},
+						{
+							"key": "Content-Length",
+							"value": "21"
+						}
+					],
+					"cookie": [],
+					"body": "logs\nmain\nmigrations\n"
+				},
+				{
+					"name": "read-output-empty",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/commands/output/7",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"commands",
+								"output",
+								"7"
+							]
+						}
+					},
+					"status": "No Content",
+					"code": 204,
+					"_postman_previewlanguage": "plain",
+					"header": [
+						{
+							"key": "Date",
+							"value": "Sun, 12 May 2024 23:38:57 GMT"
+						}
+					],
+					"cookie": [],
+					"body": null
+				}
+			]
+		}
+	]
+}
