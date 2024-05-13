@@ -7,7 +7,7 @@
 ![изображение](https://github.com/PoorMercymain/bashrun/assets/67076111/187bb177-bf5e-4c71-9bd7-59d931267d12)
 
 # Swagger
-Для того, чтобы получить доступ к Swagger UI, можно обратиться по роуту `/swagger`. Там Эндпойнты описаны более подробно
+Для того, чтобы получить доступ к Swagger UI, можно обратиться по `/swagger`. Там Эндпойнты описаны более подробно
 
 ![изображение](https://github.com/PoorMercymain/bashrun/assets/67076111/6b661df3-f3f7-46fb-bde0-b929fcabaaf0)
 
