@@ -19,3 +19,16 @@
 
 # Go workspace file
 go.work
+
+# Log files
+*.log
+abc_tmp.txt
+
+# Postgres files
+bashrun-postgres/
+
+# Env file
+.env
+
+# JSON doc
+doc.json
